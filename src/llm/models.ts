@@ -25,9 +25,17 @@ export const CLASSIFIER_MODEL = "claude-haiku-4-5" satisfies KnownModel;
  */
 const MAX_TOKENS = 16_000;
 
+export const DEFAULT_EFFORT: Effort = "medium";
+
+/** `outputConfig.effort` levels: how much the model reasons before answering. */
+export const EFFORT_LEVELS = ["low", "medium", "high", "xhigh", "max"] as const;
+export type Effort = (typeof EFFORT_LEVELS)[number];
+
 export interface ModelOptions {
   /** Override the model id, e.g. from a CLI flag. */
   model?: string;
+  /** Override extraction effort — the eval's quality/cost dial. Ignored by the classifier. */
+  effort?: Effort;
   /** Pass an explicit key instead of reading the environment (tests, scripts). */
   apiKey?: string;
 }
@@ -57,7 +65,7 @@ export function createExtractionModel(options: ModelOptions = {}): ChatAnthropic
     // tokens Claude spends reasoning before answering. "medium" is a starting
     // guess — milestone 3's eval harness is what tells us whether "high" earns
     // its extra cost on real scans. Guessing is what the harness exists to end.
-    outputConfig: { effort: "medium" },
+    outputConfig: { effort: options.effort ?? DEFAULT_EFFORT },
   });
 }
 

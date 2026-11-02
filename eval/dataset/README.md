@@ -18,27 +18,56 @@ Supported: `.png`, `.jpg`/`.jpeg`, `.gif`, `.webp`. PDFs arrive in milestone 5.
 Keep files under ~3.5 MB on disk; base64 inflates them by a third and the API
 caps a single image at 5 MB.
 
-## Milestone 3 onward: ground truth
+## Ground truth
 
-The eval harness pairs each scan with a hand-written ground-truth JSON of the
-same basename:
+Each sample is one truth file naming its image:
 
 ```
 eval/dataset/
 ├─ table-001.jpg
-├─ table-001.json      <- the correct answer, written by you
-├─ letter-003.png
-└─ letter-003.json
+├─ table-001.truth.json                 <- committed: your own document
+├─ article-p1.png
+└─ article-p1.local.truth.json          <- gitignored: third-party text
 ```
 
-The JSON matches that document type's Zod schema, and is written **by hand,
-from the image** — never by copying the model's output, which would make the
-eval measure nothing but its own agreement with itself.
+```json
+{
+  "image": "table-001.jpg",
+  "type": "table",
+  "expected": { "documentTitle": null, "tables": [ ... ], "notes": [] }
+}
+```
+
+`expected` follows the extraction schema for that type, **minus the model's
+opinions**: no `confidence`, no `warnings`, and for prose no `documentKind`.
+It is validated by the same Zod schema as the model's answer, so a ragged row
+or a badly formatted date in your truth fails at load time, not as a model
+error.
+
+Write it **by hand, from the image** (or from the document's digital source,
+cut to what the page shows), never by correcting the model's output. A
+model-drafted truth anchors you to its mistakes.
+
+Prose conventions: `text` is everything printed on the page in reading order,
+title and bylines included; headings as `## `; blank line between
+paragraphs. Markup and whitespace are forgiven when scoring; words are not.
+
+Use `.local.truth.json` for text you may read but not republish, such as a
+web article. It stays on this machine.
 
 Aim for 10–20 scans per type, and include the hard cases deliberately: skewed,
-low-resolution, handwritten, stamped, multi-page, and at least one page that is
-*not* the type being tested, so null-correctness and the classifier's ability
-to abstain can both be measured.
+low-resolution, handwritten, stamped, multi-page, and pages where the right
+answer is null (no date, no author, no title), so invention can be measured.
+
+## Running the eval
+
+```bash
+npm run eval -- --dry-run                 # what would run, free
+npm run eval                              # everything
+npm run eval -- --type prose --repeat 3   # run-to-run variance
+npm run eval -- --baseline eval/results/<earlier>.json
+npm run eval -- --effort high             # the quality/cost dial
+```
 
 Why this matters more than it sounds: a real table extraction has already
 passed Zod, passed the row-width rule, and reported `confidence: "high"` with

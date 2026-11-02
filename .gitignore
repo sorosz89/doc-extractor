@@ -154,3 +154,10 @@ eval/dataset/*
 !eval/dataset/.gitkeep
 !eval/dataset/README.md
 !eval/dataset/*.json
+# Truth for third-party text (an article you may read but not republish) stays local.
+eval/dataset/*.local.truth.json
+# Eval results hold extracted text, so they stay local too.
+eval/results/
+
+# macOS
+.DS_Store
