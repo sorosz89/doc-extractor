@@ -87,3 +87,42 @@ Still missing: a real scan of each type with hand-written ground truth.
 **Found:** dead code that looks like a feature misleads people and Claude Code
 alike, and an unregistered type is one step away from being registered. See
 [4.2](course.md#42-routing-and-abstention).
+
+---
+
+## Milestone 3 — Evaluation harness
+
+**Built:** `npm run eval`. Truth files (`<name>.truth.json`, or
+`.local.truth.json` for third-party text) validated by the extraction schemas;
+scorers for tables (cell-by-cell, by position) and prose (CER plus fields);
+invented/omitted counts; cost, latency, tokens; `--repeat`, `--baseline`,
+`--effort`; results saved to `eval/results/`.
+
+**Found:**
+
+- The first baseline failed both pages while reading the text almost perfectly
+  (CER 0.00% and 0.12%). Fields are where it went wrong.
+- Page 2 got an **invented title**: two section headings joined together.
+- Authors came back with credentials and the site name. Was that the model's
+  error or the schema's? The schema says "as printed", so it never decided.
+- A **confabulated warning**: the model misread `sütéskor` as `süléskor`, then
+  reported the typo as being in the source.
+- Both failures reported `confidence: "high"`.
+- **Synthetic table** (`eval/synthetic/make_table.py`, so the truth is exact by
+  construction): 384/384 cells right on a clean render, $0.031. The table
+  title came back `null`, because the schema doesn't say whether a subtitle
+  under the page heading is the table's caption. A clean render is the upper
+  bound; the gap to the skewed photo is milestone 5's to close.
+
+**Lessons:** [6.1](course.md#61-ground-truth-comes-from-the-page-not-the-model) ·
+[6.2](course.md#62-count-the-two-null-errors-separately) ·
+[6.3](course.md#63-a-rate-for-text-a-verdict-for-fields) ·
+[6.4](course.md#64-the-eval-finds-the-schemas-gaps) ·
+[6.5](course.md#65-self-reports-are-not-evidence) ·
+[6.6](course.md#66-baselines-and-repeats)
+
+**Verified:** 91 tests offline; typecheck clean. First real run: 2 prose
+pages, 0% pass, $0.042 total, 13.1 s per page.
+
+Still missing: ground truth for the real skewed Tápanyagtáblázat photo,
+truth for the scanned `Fitoosztrogen.jpg` page, and more samples per type.

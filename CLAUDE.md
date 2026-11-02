@@ -109,7 +109,7 @@ Build in small steps; each milestone ends with working code and a short entry in
 
 1. ~~**Hello vision.**~~ **Done.** One image in, free-text description plus token counts out. *Learned:* multimodal messages, API keys, image token cost.
 2. ~~**First structured extraction.**~~ **Done.** `table` and `prose` Zod schemas via `withStructuredOutput()`. *Learned:* tool calling, schema-as-prompt, `strict: true` is unusable here (16-union API limit vs. nullable-everywhere).
-3. **Evaluation harness.** 10–20 labelled samples per type; field-level accuracy, null-correctness, cost and latency. *Learn:* why numbers come before prompt changes.
+3. **Evaluation harness.** Harness done (`npm run eval`); dataset still growing toward 10–20 labelled samples per type. *Learned:* ground truth, CER, invented vs omitted, baselines.
 4. **Prompt engineering.** System prompt, few-shot example; every change judged against the eval, never by eye.
 5. **Preprocessing and multi-page PDFs.** Deskew, resize, split PDFs, merge page results. *Learn:* image token cost vs accuracy — and whether deskewing fixes the drift in `course.md` 3.1.
 6. **Classification and routing.** Haiku-tier classifier picking the schema, and able to answer "neither". *Learn:* model routing, chaining with LCEL.

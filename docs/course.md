@@ -1,7 +1,7 @@
 # Doc Extractor: Building a Vision Extraction Pipeline — Course
 
 What building this project has taught so far, organised by concept rather than
-by date. Covers milestones 1–2. The chronological record is
+by date. Covers milestones 1–3. The chronological record is
 [`learning-log.md`](learning-log.md); the shareable copy of this course is the
 [Claude Doc](https://claude.ai/artifact/Mqh6nqC3dHGgmob5zDmKH4).
 
@@ -35,6 +35,12 @@ Every lesson has the same five parts:
 | 5.2 | Secrets at the edge | Validate env once at startup; never log the value. |
 | 5.3 | Runtime keys lose types | A type chosen at runtime is honestly `unknown` at compile time. |
 | 5.4 | Check the contract | API advice rots fast; one cheap real call beats confident reasoning. |
+| 6.1 | Ground truth comes from the page | Truth is held to the extraction schema, minus the model's opinions. |
+| 6.2 | Two kinds of null error | Count invented and omitted separately; they are opposite failures. |
+| 6.3 | A rate for text, a verdict for fields | CER for transcriptions; normalise encoding and markup, never content. |
+| 6.4 | The eval finds the schema's gaps | A "wrong" answer can be a question the schema never settled. |
+| 6.5 | Self-reports are not evidence | Confidence and warnings can both be confidently wrong. |
+| 6.6 | Baselines and repeats | Without temperature, one run is an anecdote; compare against a saved run. |
 
 ---
 
@@ -458,6 +464,137 @@ temperature 0". What does that teach about your own plans?
 
 ---
 
+## Module 6 — Measuring
+
+An extraction is only as good as the number that says so, and that number is
+only as good as the ground truth behind it.
+
+### 6.1 Ground truth comes from the page, not the model
+
+**Key idea.** Write the truth from the page (or the document's digital
+source), hold it to the same schema as the model's answer, and leave out
+every field that is the model's opinion.
+
+**Why it matters.** Truth copied from model output measures the model's
+agreement with itself. Truth that breaks the schema — a ragged row, a date as
+`2022.09.24.` — would score the model wrong for your typo, so it must fail at
+load time instead. `confidence`, `warnings` and prose `documentKind` have no
+correct value to write down, so they are not scored.
+
+**In the code.** `eval/src/truth.ts` derives the truth schemas with
+`.omit()`; `eval/src/dataset.ts` rejects bad truth before any call is made.
+Third-party text lives in `*.local.truth.json`, which is gitignored: you may
+read an article, not republish it.
+
+**Evidence.** The WEBBeteg article came with its `.docx` source, so its truth
+was cut from that, page by page. Even a PDF text layer is not truth: it
+silently turned `bíborhere-mennyiség` into `bíborheremennyiség`.
+
+**Check yourself.** Q19: Why not let the model extract the table once,
+correct its mistakes by hand, and use that as ground truth?
+
+### 6.2 Count the two null errors separately
+
+**Key idea.** For every nullable slot, an *invented* value (page blank, model
+filled it) and an *omitted* value (page filled, model said null) are opposite
+failures, so report them separately.
+
+**Why it matters.** Folded into one accuracy number, hallucination and
+under-reading can cancel out or hide. The invention rate is the hallucination
+metric this project cares most about.
+
+**In the code.** `compareSlot()` in `eval/src/score/text.ts` returns one of
+`correct`, `correctNull`, `wrong`, `invented`, `omitted`.
+
+**Evidence.** Page 2 of the article has no title — it continues page 1. The
+model returned `"A szója és a lenmag előnyei / Káros, ösztrogénhatású
+anyagok"`: two section headings, joined into a title. Invented, with
+`confidence: "high"`.
+
+**Check yourself.** Q20: A run shows 100% field accuracy on pages that all
+have titles. What has it told you about invention?
+
+### 6.3 A rate for text, a verdict for fields
+
+**Key idea.** A transcription is never exactly right, so score it with
+character error rate (CER); score fields as right or wrong; turn rates into a
+pass/fail only through an explicit threshold.
+
+**Why it matters.** Normalisation decides what counts. Forgive *encoding*
+(whitespace, Unicode composition) and *markup* (`## `, bullets); never forgive
+*content* — `—` vs `-` and `12,5` vs `12.5` stay errors because the schema
+promises text as printed. Tables align by position, so a value that drifted a
+row (3.1) shows up as one omitted and one invented cell.
+
+**In the code.** `eval/src/score/` — `text.ts`, `table.ts`, `prose.ts`.
+Thresholds: tables pass at ≥ 98% cells with exact structure; prose at
+CER ≤ 2%. Starting guesses, to tune on data.
+
+**Evidence.** First run: CER 0.00% and 0.12% — near-perfect reading — and
+both pages failed, on fields.
+
+**Check yourself.** Q21: Why align table rows by position rather than by
+matching each row's label?
+
+### 6.4 The eval finds the schema's gaps
+
+**Key idea.** When a result scores wrong, first ask whether the model was
+wrong or the schema never said.
+
+**Why it matters.** Page 1's authors came back as
+`"Dr. Fáklya Mónika, gyermekgyógyász, endokrinológus - WEBBeteg"`. The schema
+says authors "as printed" — and that *is* what is printed. The truth says
+`"Dr. Fáklya Mónika"`. Neither is wrong until the field description decides.
+That fix is milestone 4's work, and its effect is measurable against this run.
+
+**In the code.** The `authors` description in `src/schemas/prose.ts`.
+
+**Evidence.** The same run; `authors 0/1 (+1)` in the report.
+
+**Check yourself.** Q22: You could make the scorer strip credentials before
+matching. Why fix the schema description instead?
+
+### 6.5 Self-reports are not evidence
+
+**Key idea.** `confidence` and `warnings` are the model's opinion of its own
+work, and both can be confidently wrong.
+
+**Why it matters.** The report lists "high confidence, failed anyway"
+because that list is the calibration check from 3.2, measured. Warnings need
+the same scepticism: they are generated text, not observations.
+
+**In the code.** `confidentFailures` in `eval/src/report.ts`.
+
+**Evidence.** Both failing pages said `high`. On page 2 the model wrote
+`süléskor` and added a warning that the *source* contains that typo — the
+page says `sütéskor`. The model misread, then explained its misreading as the
+page's fault.
+
+**Check yourself.** Q23: Should a reviewer trust a warning that says "typo in
+source retained"?
+
+### 6.6 Baselines and repeats
+
+**Key idea.** Save every run, compare each change against a saved baseline,
+and repeat runs to see how much results move on their own.
+
+**Why it matters.** With no `temperature`, the same page can come back
+different each time. A prompt change that "improves" CER by less than the
+run-to-run spread is noise. `--repeat` measures the spread; the report names
+samples whose pass/fail flipped between repeats.
+
+**In the code.** `npm run eval -- --repeat 3`, `--baseline <results.json>`,
+`--effort high`. Results land in `eval/results/` (gitignored: they hold
+extracted text).
+
+**Evidence.** The first baseline: 2 prose pages, 0% pass, $0.021 and 13.1 s
+per page, 3,513 input and 1,394 output tokens per page.
+
+**Check yourself.** Q24: A prompt change raises pass rate from 50% to 100% on
+two pages, from one run each. What would you do before believing it?
+
+---
+
 ## Answer key
 
 Try each question before reading its answer.
@@ -482,3 +619,9 @@ Try each question before reading its answer.
 | 16 | Because it fails silently and is noticed only after a key leaks into a bug report or trace. |
 | 17 | Whenever the type is known at compile time, such as in the eval harness, so the result keeps its precise type. Use the registry only for runtime choices. |
 | 18 | Plans encode the advice of the day they were written. Check them against the current contract before building on them. |
+| 19 | The draft anchors you: a drifted cell that looks plausible is exactly what a reviewer waves through, so the truth inherits the model's errors and the eval stops seeing them. |
+| 20 | Nothing. Invention can only happen where the page is blank, so you need pages where the right answer is null. |
+| 21 | Position is what drifts. Matching by label would quietly realign a shifted value and hide the failure the eval exists to catch. |
+| 22 | The description is what the model reads; fixing it changes the answer for every user, not only the score. A lenient scorer would hide a real ambiguity. |
+| 23 | No. Check it against the page: here the "typo" was the model's own misreading. |
+| 24 | Run each version several times, add pages, and compare against the saved baseline; two pages and one run cannot separate a real gain from noise. |

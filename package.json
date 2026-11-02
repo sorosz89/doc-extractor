@@ -11,6 +11,7 @@
   "scripts": {
     "describe": "tsx src/cli.ts describe",
     "extract": "tsx src/cli.ts extract",
+    "eval": "tsx eval/run-eval.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
