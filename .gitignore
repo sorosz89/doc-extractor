@@ -147,3 +147,10 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Scanned documents are personal data — keep them local.
+# Ground-truth JSON is safe to commit (it is yours, and the eval needs it).
+eval/dataset/*
+!eval/dataset/.gitkeep
+!eval/dataset/README.md
+!eval/dataset/*.json
