@@ -10,6 +10,7 @@
   },
   "scripts": {
     "describe": "tsx src/cli.ts describe",
+    "extract": "tsx src/cli.ts extract",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
