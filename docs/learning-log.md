@@ -108,6 +108,11 @@ invented/omitted counts; cost, latency, tokens; `--repeat`, `--baseline`,
 - A **confabulated warning**: the model misread `sütéskor` as `süléskor`, then
   reported the typo as being in the source.
 - Both failures reported `confidence: "high"`.
+- **Synthetic table** (`eval/synthetic/make_table.py`, so the truth is exact by
+  construction): 384/384 cells right on a clean render, $0.031. The table
+  title came back `null`, because the schema doesn't say whether a subtitle
+  under the page heading is the table's caption. A clean render is the upper
+  bound; the gap to the skewed photo is milestone 5's to close.
 
 **Lessons:** [6.1](course.md#61-ground-truth-comes-from-the-page-not-the-model) ·
 [6.2](course.md#62-count-the-two-null-errors-separately) ·
@@ -119,5 +124,5 @@ invented/omitted counts; cost, latency, tokens; `--repeat`, `--baseline`,
 **Verified:** 91 tests offline; typecheck clean. First real run: 2 prose
 pages, 0% pass, $0.042 total, 13.1 s per page.
 
-Still missing: table ground truth (the Tápanyagtáblázat, 384 cells by hand),
+Still missing: ground truth for the real skewed Tápanyagtáblázat photo,
 truth for the scanned `Fitoosztrogen.jpg` page, and more samples per type.

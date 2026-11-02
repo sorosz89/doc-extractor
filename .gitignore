@@ -156,6 +156,8 @@ eval/dataset/*
 !eval/dataset/*.json
 # Truth for third-party text (an article you may read but not republish) stays local.
 eval/dataset/*.local.truth.json
+# Synthetic samples hold no personal data: commit them so anyone can rerun the eval.
+!eval/dataset/synthetic-*
 # Eval results hold extracted text, so they stay local too.
 eval/results/
 
