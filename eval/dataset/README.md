@@ -42,7 +42,7 @@ to abstain can both be measured.
 
 Why this matters more than it sounds: a real table extraction has already
 passed Zod, passed the row-width rule, and reported `confidence: "high"` with
-several cells wrong (`docs/learning-log.md` §8). Validation proves shape, not
+several cells wrong (`docs/course.md` lesson 3.1). Validation proves shape, not
 truth. Ground truth is the only thing that proves truth.
 
 ## Privacy

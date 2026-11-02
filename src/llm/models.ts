@@ -46,7 +46,7 @@ function resolveApiKey(options: ModelOptions): string {
  * Opus 5 removed the sampling parameters entirely and return HTTP 400 if you
  * send `temperature`, `top_p`, or `top_k`. Consistency now comes from the
  * schema (milestone 2), the prompt (milestone 4), and `effort` below — not from
- * a sampling knob. See docs/learning-log.md.
+ * a sampling knob. See docs/course.md lesson 4.1.
  */
 export function createExtractionModel(options: ModelOptions = {}): ChatAnthropic {
   return new ChatAnthropic({
