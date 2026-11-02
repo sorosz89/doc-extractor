@@ -67,6 +67,4 @@ about what exists. `preprocess/`, `classify/`, `validate/`, and `output/` are
 coming — see `CLAUDE.md`.
 
 Adding a document type is two steps: write the schema in `src/schemas/`, add a
-line to `src/schemas/registry.ts`. The recipe is in `docs/learning-log.md` §11,
-and `src/schemas/invoice.ts` is a fully commented worked example — present as
-reference, deliberately not registered.
+line to `src/schemas/registry.ts`. The recipe is in `docs/learning-log.md` §11.

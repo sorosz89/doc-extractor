@@ -6,7 +6,7 @@ import { extractionMeta, isoDate, languageCode, nullableText } from "./fields.js
  *
  * WHY THIS SCHEMA LOOKS SO DIFFERENT FROM THE OTHERS
  *
- * An invoice or a table has fields because the document has fields. Prose does
+ * A table has fields because the document has fields. Prose does
  * not. "Extract this prose document" has no meaning on its own — the schema has
  * to encode a *question*, and different questions give completely different
  * schemas:

@@ -9,8 +9,8 @@ import { z } from "zod";
  * prompt — probably the most important one in the project.
  *
  * That makes the conversion boundary the thing to keep in mind. Run it and look
- * at what comes out (there is a test in `invoice.test.ts` that does exactly
- * this):
+ * at what comes out (the tests in `dataTable.test.ts` and `prose.test.ts` do
+ * exactly this):
  *
  *   .describe("...")        -> `description`   VISIBLE to the model
  *   .nullable()             -> `["T", "null"]` VISIBLE, and the key stays required
@@ -26,7 +26,7 @@ import { z } from "zod";
  *    an ISO date" only shapes the output if it reaches the model as a
  *    `description` or a `pattern`.
  *  - A rule that is only checked *after the fact* (`.refine()`, and business
- *    rules such as "the line items sum to the subtotal") is invisible to the
+ *    rules such as "every row has one cell per column") is invisible to the
  *    model by definition. It can only reject an answer, never improve one.
  *    Those belong in the validation layer of milestone 7, where a failure can
  *    be fed back to the model as a repair instruction.
@@ -78,51 +78,12 @@ export function isoDate(description: string) {
     .describe(`${description} Format: YYYY-MM-DD. Convert from whatever format the document uses.`);
 }
 
-/**
- * A monetary amount as a plain number.
- *
- * No sign constraint: credit notes and refunds carry negative amounts, and a
- * `minimum: 0` would turn a correctly-read credit note into a validation
- * failure. No `multipleOf: 0.01` either — currencies disagree about decimal
- * places, and binary floats disagree with `multipleOf` about everything.
- *
- * The description carries the real work, because the hard part is not the
- * number, it is the formatting of the number on the page: `1.234,56` is one
- * thousand two hundred in Hungary and one point two in the US.
- */
-export function money(description: string) {
-  return z
-    .number()
-    .nullable()
-    .describe(
-      `${description} A plain number: no currency symbol, no thousands separator, a dot for the decimal point. Mind the document's own convention — "1.234,56" means 1234.56.`,
-    );
-}
-
-/** A counted or measured amount. Same reasoning as `money`, minus the currency. */
-export function quantity(description: string) {
-  return z
-    .number()
-    .nullable()
-    .describe(`${description} A plain number, dot as the decimal point.`);
-}
-
-/** An ISO 4217 currency code. Length 3 reaches the model as minLength/maxLength. */
-export function currencyCode(description: string) {
-  return z
-    .string()
-    .trim()
-    .length(3)
-    .nullable()
-    .describe(`${description} An ISO 4217 three-letter code, uppercase: EUR, USD, HUF. Infer it from a symbol if that is all the document shows.`);
-}
-
 export const CONFIDENCE_LEVELS = ["high", "medium", "low"] as const;
 
 /**
  * The metadata every document type carries alongside its fields.
  *
- * Spread this into each document schema (see `invoice.ts`) so that every type
+ * Spread this into each document schema (see `dataTable.ts`) so that every type
  * reports its own reliability the same way and the review queue in milestone 7
  * has one thing to look at.
  *
@@ -151,7 +112,7 @@ export const extractionMeta = {
     ),
 };
 
-/** An ISO 639-1 language code. Two letters, same reasoning as `currencyCode`. */
+/** An ISO 639-1 language code. Length 2 reaches the model as minLength/maxLength. */
 export function languageCode(description: string) {
   return z
     .string()

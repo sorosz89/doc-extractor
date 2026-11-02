@@ -52,7 +52,7 @@ lossy preprocessing step in front of a model that reads better without it.
 
 The cost is a different failure mode. OCR fails *visibly* — you get garbled
 characters. A VLM fails *plausibly*: it will produce a well-formed, confident,
-wrong invoice number. Milestones 2, 3, and 7 (schemas, null-instead-of-guess
+wrong date or figure. Milestones 2, 3, and 7 (schemas, null-instead-of-guess
 prompting, validation) exist entirely to manage that.
 
 ### 3. Images cost tokens, and the image dominates the bill
@@ -135,8 +135,6 @@ validated typed JSON comes out.
 
 - `src/schemas/fields.ts` — reusable field builders carrying the design rules.
 - `src/schemas/dataTable.ts`, `prose.ts` — the two types the corpus actually has.
-- `src/schemas/invoice.ts` — the worked example this entry walks through.
-  Deliberately *not* registered (see §9).
 - `src/schemas/registry.ts` — key → schema; the seam the classifier plugs into.
 - `src/extract/extractDocument.ts` — schema-agnostic; the model is a parameter.
 
@@ -278,7 +276,7 @@ being probabilistic — and can be fixed without re-paying for the extraction.
 
 ### 7. Prose has no fields, so the schema has to encode a question
 
-An invoice has fields because the document has fields. Prose does not.
+A table has fields because the document has fields. Prose does not.
 "Extract this prose document" is meaningless until you say what you want:
 
 | Question | Schema | Scorable? |
@@ -351,13 +349,12 @@ registry with one entry is indistinguishable from a constant.
 - **It must be able to abstain.** On a mixed corpus the most important answer is
   "none of these" → review queue. Without it, every document is forced into the
   nearest schema and the pipeline produces confident garbage. This is the
-  `null`-instead-of-guess rule one level up — and the invoice run proved its
-  value: that result was only clean because the model was *allowed* to say "this
-  is not an invoice".
+  `null`-instead-of-guess rule one level up — and the mismatched-schema run
+  (verification notes) proved its value: that result was only clean because the
+  model was *allowed* to say "this is not the expected document".
 - **Do not register a type the corpus does not contain.** Not harmless: it is a
   label the classifier can pick by mistake, and every false positive routes a
-  real document into a schema that cannot hold it. Hence `invoice.ts` being a
-  file and not a registry entry.
+  real document into a schema that cannot hold it.
 - **Do not classify when you already know.** `--type` is free and cannot be
   wrong; a classifier costs a call and can be. It earns its place only for
   genuinely mixed, unlabelled input. That is why `--type` is *required* rather
@@ -381,9 +378,9 @@ wrong move — repeat the exercise:
 3. **Reach for `fields.ts` first.** Add a helper there when a second type needs
    the same kind of field.
 4. **Write descriptions that resolve ambiguity, not ones that restate the
-   name.** `invoiceNumber: "the invoice number"` says nothing. Useful ones answer
-   a question the model would otherwise guess at: *which* of three numbers,
-   which party is the seller, what `1.234,56` means. If a careful reader would
+   name.** `header: "the column header"` says nothing. Useful ones answer a
+   question the model would otherwise guess at: *which* row is the header,
+   whether a unit printed under it belongs to it, what a `—` in a cell means. If a careful reader would
    hesitate, write a sentence.
 5. **Every scalar nullable, nothing optional** (§3).
 6. **Spread in `extractionMeta`** so every type reports confidence and warnings
@@ -411,14 +408,23 @@ confidence comes from measured accuracy and validation, never from self-opinion.
   `exactOptionalPropertyTypes`.
 - **Table path**, real photo: structure exact (32×12, no ragged rows), labels
   exact, values partly wrong in the sparse columns — §8. 5,250 in / 1,879 out,
-  $0.029. Note the output cost: a full table is ~4x an invoice's output, billed
-  at 5x input.
+  $0.029. Note the output cost: a full table writes every cell, and output is
+  billed at 5x input.
 - **Prose path**, synthetic letter: verbatim transcription, paragraph breaks and
   signature line breaks preserved, `## ` headings, `2026. marcius 14.` →
   `2026-03-14`, language `hu`, no invention. 3,747 in / 432 out, $0.012.
-- **Null-correctness**, nutrition table read with the invoice schema before the
-  pivot: every field `null`, `confidence: "low"`, one warning naming what the
+- **Null-correctness**, nutrition table read with a schema for a different
+  document type, before the pivot: every field `null`, `confidence: "low"`, one warning naming what the
   page actually was. The model declined to invent a document that was not there.
 - Still missing: a **real scanned** example of each type with hand-written
   ground truth. The synthetic samples prove the wiring and nothing about skew,
   noise, or handwriting.
+
+---
+
+## Hardening — scope
+
+- **Removed the invoice schema.** It was an unregistered worked example; the
+  project is for tables and prose only. Its unused field helpers (`money`,
+  `quantity`, `currencyCode`) went with it. Dead code that reads like a feature
+  misleads people and Claude Code alike, and it would tempt someone to register it.

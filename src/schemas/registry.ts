@@ -26,9 +26,6 @@ import { proseSchema } from "./prose.js";
  * classifier can pick by mistake, and every false positive it produces routes a
  * real document into a schema that cannot hold it. Keep this list to the types
  * you actually have.
- *
- * `invoice.ts` is therefore present in the repository as the worked example the
- * learning log walks through, and deliberately *not* registered.
  */
 
 export interface DocumentType<TSchema extends z.ZodType = z.ZodType> {

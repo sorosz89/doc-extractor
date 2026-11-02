@@ -7,7 +7,7 @@ const image: LoadedImage = {
   base64: "QUJD",
   mimeType: "image/png",
   bytes: 3,
-  filename: "invoice.png",
+  filename: "scan.png",
 };
 
 /**
@@ -28,7 +28,7 @@ const reply = (text: string, input = 4_200, output = 300) =>
 
 describe("describeDocument", () => {
   it("sends the image and the question as two content blocks, image first", async () => {
-    const model = stubModel(reply("A skewed invoice."));
+    const model = stubModel(reply("A skewed letter."));
 
     await describeDocument(model, image);
 
