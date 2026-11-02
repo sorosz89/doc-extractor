@@ -98,7 +98,7 @@ export interface ExtractionResult<T> {
 function extractionInstruction(label: string): string {
   return `This is a scanned ${label}. Read it and record its fields using the provided tool.
 
-Work only from what is on the page. Where a field is not present, return null rather than a plausible value — an invented invoice number is far worse than a missing one, because nothing downstream can tell the difference.`;
+Work only from what is on the page. Where a field is not present, return null rather than a plausible value — an invented value is far worse than a missing one, because nothing downstream can tell the difference.`;
 }
 
 function firstToolCallArguments(raw: BaseMessage): unknown {

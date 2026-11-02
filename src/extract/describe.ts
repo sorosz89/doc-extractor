@@ -51,8 +51,8 @@ export interface DescribeResult {
 const DESCRIBE_PROMPT = `Describe this scanned document.
 
 Cover:
-- What kind of document it is (invoice, receipt, form, letter, something else).
-- Its overall layout: where the header, totals, tables, and signatures sit.
+- What kind of document it is (table, form, letter, article, something else).
+- Its overall layout: where the header, tables, text blocks, and signatures sit.
 - Anything that would make automated extraction hard: skew, low contrast, handwriting, stamps, cropped edges, multiple columns.
 
 Describe only what is visible. If something is unreadable, say it is unreadable rather than guessing at it.`;

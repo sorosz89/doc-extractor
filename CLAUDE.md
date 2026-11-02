@@ -28,7 +28,7 @@ The key ideas:
 
 - **Schema first.** Each document type has a Zod schema. The schema drives the prompt, the structured output, and validation.
 - **Type by structure, not subject.** `table` captures any table's shape; `prose` captures a transcription. Interpreting the captured text is a later, non-LLM step.
-- **Register only types the corpus has.** An unused type is a label the classifier can pick by mistake; `src/schemas/invoice.ts` is a worked example, unregistered.
+- **Register only types the corpus has.** An unused type is a label the classifier can pick by mistake.
 - **Effort, not temperature.** Current models reject `temperature`, so consistency comes from the schema, the prompt, and validation; `outputConfig.effort` is the quality/cost dial.
 - **Structured output via tool calling.** LangChain's `withStructuredOutput()` turns the Zod schema into a tool definition that Claude must fill, which is far more reliable than asking for JSON in plain text.
 - **Classify, then extract.** A cheap first call identifies the document type; a second call extracts with the matching schema. The classifier must be able to answer "neither".
