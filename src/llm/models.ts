@@ -6,7 +6,7 @@ import type { KnownModel } from "./cost.js";
  * The model factory: one place where every model decision lives.
  *
  * Why a factory rather than `new ChatAnthropic(...)` at each call site?
- * Milestone 6 (model routing) and milestone 3 (prompt comparison) both depend
+ * Milestone 6 (model routing) and milestone 4 (prompt comparison) both depend
  * on being able to change the model in exactly one place. If an extraction
  * prompt experiment also drifts the model, the experiment means nothing.
  */
@@ -45,7 +45,7 @@ function resolveApiKey(options: ModelOptions): string {
  * determinism. That advice predates the current model generation: Sonnet 5 and
  * Opus 5 removed the sampling parameters entirely and return HTTP 400 if you
  * send `temperature`, `top_p`, or `top_k`. Consistency now comes from the
- * schema (milestone 2), the prompt (milestone 3), and `effort` below — not from
+ * schema (milestone 2), the prompt (milestone 4), and `effort` below — not from
  * a sampling knob. See docs/learning-log.md.
  */
 export function createExtractionModel(options: ModelOptions = {}): ChatAnthropic {
@@ -55,7 +55,7 @@ export function createExtractionModel(options: ModelOptions = {}): ChatAnthropic
     maxTokens: MAX_TOKENS,
     // `effort` replaced the old fixed "thinking budget": it controls how many
     // tokens Claude spends reasoning before answering. "medium" is a starting
-    // guess — milestone 4's eval harness is what tells us whether "high" earns
+    // guess — milestone 3's eval harness is what tells us whether "high" earns
     // its extra cost on real scans. Guessing is what the harness exists to end.
     outputConfig: { effort: "medium" },
   });

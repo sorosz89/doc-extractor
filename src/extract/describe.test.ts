@@ -52,7 +52,7 @@ describe("describeDocument", () => {
     const [messages] = vi.mocked(model.invoke).mock.calls[0]!;
     const blocks = (messages as HumanMessage[])[0]!.content as Array<Record<string, string>>;
 
-    // The anti-hallucination instruction is load-bearing from milestone 3 on.
+    // The anti-hallucination instruction is load-bearing from milestone 4 on.
     expect(blocks[1]?.text).toMatch(/unreadable rather than guessing/);
   });
 

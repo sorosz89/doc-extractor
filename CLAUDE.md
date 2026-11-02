@@ -6,7 +6,7 @@ Nov 2, 2026 · @Sándor Orosz
 
 We build a TypeScript pipeline that takes scanned documents (images or PDFs) and returns validated, structured JSON, using Claude's vision capabilities orchestrated through LangChain.js. The project is primarily a learning vehicle: every stage should teach one AI concept, not just work.
 
-**Input:** scanned documents (PNG, JPG, multi-page PDF), e.g. invoices, receipts, forms.
+**Input:** scanned documents (PNG, JPG, multi-page PDF), e.g. dietary/composition tables, prose documents, forms.
 
 **Output:** typed JSON matching a predefined schema per document type, plus metadata (confidence, warnings, source page).
 
@@ -26,10 +26,12 @@ We send each page image directly to Claude together with a target schema, and Cl
 
 The key ideas:
 
-- **Schema first.** Each document type (invoice, receipt, form) has a Zod schema. The schema drives the prompt, the structured output, and validation.
+- **Schema first.** Each document type has a Zod schema. The schema drives the prompt, the structured output, and validation.
+- **Type by structure, not subject.** `table` captures any table's shape; `prose` captures a transcription. Interpreting the captured text is a later, non-LLM step.
+- **Register only types the corpus has.** An unused type is a label the classifier can pick by mistake; `src/schemas/invoice.ts` is a worked example, unregistered.
 - **Effort, not temperature.** Current models reject `temperature`, so consistency comes from the schema, the prompt, and validation; `outputConfig.effort` is the quality/cost dial.
 - **Structured output via tool calling.** LangChain's `withStructuredOutput()` turns the Zod schema into a tool definition that Claude must fill, which is far more reliable than asking for JSON in plain text.
-- **Classify, then extract.** A cheap first call identifies the document type; a second call extracts with the matching schema.
+- **Classify, then extract.** A cheap first call identifies the document type; a second call extracts with the matching schema. The classifier must be able to answer "neither".
 - **Validate and repair.** Zod plus business rules (totals add up, dates are valid) catch errors; failures trigger one retry with the error message fed back to the model.
 - **Human in the loop.** Low-confidence or invalid results are flagged for review instead of silently accepted.
 
@@ -104,15 +106,17 @@ doc-extractor/
 
 Build in small steps; each milestone ends with working code and a short entry in `learning-log.md`.
 
-1. **Hello vision.** Send one scanned image to Claude via `@langchain/anthropic` and print a free-text description. *Learn:* multimodal messages, API keys, token usage.
-2. **First structured extraction.** Define an invoice Zod schema and use `withStructuredOutput()`. *Learn:* tool calling, schema design, field descriptions.
-3. **Prompt engineering.** Add a system prompt, null-instead-of-guess rules, and one few-shot example; compare results. *Learn:* how wording changes output.
-4. **Evaluation harness.** Create 10–20 labelled samples and measure field-level accuracy. *Learn:* why you need numbers before changing prompts.
-5. **Multi-page PDFs and preprocessing.** Convert PDFs to images, resize, and merge page results. *Learn:* image token cost vs accuracy.
-6. **Classification and routing.** Add a Haiku-tier classifier that picks the schema. *Learn:* model routing, chaining with LCEL.
+1. ~~**Hello vision.**~~ **Done.** One image in, free-text description plus token counts out. *Learned:* multimodal messages, API keys, image token cost.
+2. ~~**First structured extraction.**~~ **Done.** `table` and `prose` Zod schemas via `withStructuredOutput()`. *Learned:* tool calling, schema-as-prompt, `strict: true` is unusable here (16-union API limit vs. nullable-everywhere).
+3. **Evaluation harness.** 10–20 labelled samples per type; field-level accuracy, null-correctness, cost and latency. *Learn:* why numbers come before prompt changes.
+4. **Prompt engineering.** System prompt, few-shot example; every change judged against the eval, never by eye.
+5. **Preprocessing and multi-page PDFs.** Deskew, resize, split PDFs, merge page results. *Learn:* image token cost vs accuracy — and whether deskewing fixes the drift in §8.
+6. **Classification and routing.** Haiku-tier classifier picking the schema, and able to answer "neither". *Learn:* model routing, chaining with LCEL.
 7. **Validation and repair loop.** Business rules plus a retry that feeds errors back. *Learn:* self-correction, failure modes.
-8. **Observability and cost.** Enable LangSmith tracing; log cost per document. *Learn:* debugging chains in production.
-9. **Optimisation (optional).** Prompt caching, the Batch API, concurrency limits. *Learn:* scaling an LLM pipeline.
+8. **Observability and cost.** LangSmith tracing; cost per document. *Learn:* debugging chains in production.
+9. **Optimisation (optional).** Prompt caching, the Batch API, concurrency limits.
+
+**Why 3 and 4 swapped:** a real table extraction passed Zod, passed the row-width rule, and reported `confidence: "high"` with several cells wrong (`docs/learning-log.md` §8). Validation proves shape, not truth — so nothing after this point is measurable without the harness.
 
 ## Evaluation approach
 
@@ -125,13 +129,13 @@ Every prompt or model change is judged against a fixed labelled dataset, never b
 - **Cost and latency:** tokens and seconds per document, tracked over time.
 - **Report:** `npm run eval` prints a table per field so you can see which prompt change helped or hurt.
 
-Sample data sources to explore: your own scanned receipts, or public datasets such as SROIE (receipts) and FUNSD (forms).
+Sample data: your own scans. Validation passing is not accuracy — a real table extraction passed every check with several cells wrong (`docs/learning-log.md` §8), which is why this milestone comes next.
 
 ## Working with Claude Code
 
 Since this is a study project, use Claude Code as a tutor and pair programmer, not as an autopilot.
 
-- **Start with `CLAUDE.md`.** Paste the summary, stack, and structure from this doc into it so every session has the context.
+- **This file is the context.** Keep it lean — one terse line per decision; the reasoning belongs in `docs/learning-log.md`.
 - **One milestone per session.** Ask for a plan first, review it, then let it implement.
 - **Ask "why".** After each step, ask Claude Code to explain the AI concept behind the code and add notes to `learning-log.md`.
 - **Write some parts yourself.** Especially prompts and schemas; let Claude Code review them.
@@ -140,10 +144,9 @@ Since this is a study project, use Claude Code as a tutor and pair programmer, n
 Suggested kickoff prompt:
 
 ```
-I'm building a study project: a TypeScript + LangChain.js pipeline that turns
-scanned documents into structured JSON using Claude's vision capabilities.
-Read CLAUDE.md for the goals, stack, and structure. Let's start with
-milestone 1: scaffold the project (strict TypeScript, Vitest, .env handling)
-and send one sample image to Claude via @langchain/anthropic.
-Plan first, then implement. Explain each AI-related concept as we go.
+Read CLAUDE.md for the goals, stack, and roadmap, and docs/learning-log.md
+for what the project has already learned. Let's do milestone 3: the eval
+harness — ground truth per document type, field-level accuracy, null
+correctness, cost and latency. Plan first, then implement. Explain each
+AI-related concept as we go.
 ```
