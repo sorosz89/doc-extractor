@@ -97,26 +97,27 @@ doc-extractor/
 │  ├─ dataset/       # sample scans + ground-truth JSON
 │  └─ run-eval.ts    # field-level accuracy report
 ├─ docs/
-│  └─ learning-log.md  # what you learned at each milestone
+│  ├─ learning-log.md  # journal: what each milestone built and found
+│  └─ course.md        # lessons by concept, with quiz; mirrored to a Claude Doc
 ├─ CLAUDE.md         # project context for Claude Code
 └─ .env.example      # ANTHROPIC_API_KEY, LANGSMITH_API_KEY
 ```
 
 ## Milestones and learning roadmap
 
-Build in small steps; each milestone ends with working code and a short entry in `learning-log.md`.
+Build in small steps; each milestone ends with working code and a short entry in `learning-log.md` plus new or updated lessons in `course.md`.
 
 1. ~~**Hello vision.**~~ **Done.** One image in, free-text description plus token counts out. *Learned:* multimodal messages, API keys, image token cost.
 2. ~~**First structured extraction.**~~ **Done.** `table` and `prose` Zod schemas via `withStructuredOutput()`. *Learned:* tool calling, schema-as-prompt, `strict: true` is unusable here (16-union API limit vs. nullable-everywhere).
 3. **Evaluation harness.** 10–20 labelled samples per type; field-level accuracy, null-correctness, cost and latency. *Learn:* why numbers come before prompt changes.
 4. **Prompt engineering.** System prompt, few-shot example; every change judged against the eval, never by eye.
-5. **Preprocessing and multi-page PDFs.** Deskew, resize, split PDFs, merge page results. *Learn:* image token cost vs accuracy — and whether deskewing fixes the drift in §8.
+5. **Preprocessing and multi-page PDFs.** Deskew, resize, split PDFs, merge page results. *Learn:* image token cost vs accuracy — and whether deskewing fixes the drift in `course.md` 3.1.
 6. **Classification and routing.** Haiku-tier classifier picking the schema, and able to answer "neither". *Learn:* model routing, chaining with LCEL.
 7. **Validation and repair loop.** Business rules plus a retry that feeds errors back. *Learn:* self-correction, failure modes.
 8. **Observability and cost.** LangSmith tracing; cost per document. *Learn:* debugging chains in production.
 9. **Optimisation (optional).** Prompt caching, the Batch API, concurrency limits.
 
-**Why 3 and 4 swapped:** a real table extraction passed Zod, passed the row-width rule, and reported `confidence: "high"` with several cells wrong (`docs/learning-log.md` §8). Validation proves shape, not truth — so nothing after this point is measurable without the harness.
+**Why 3 and 4 swapped:** a real table extraction passed Zod, passed the row-width rule, and reported `confidence: "high"` with several cells wrong (`docs/course.md` 3.1). Validation proves shape, not truth — so nothing after this point is measurable without the harness.
 
 ## Evaluation approach
 
@@ -129,22 +130,22 @@ Every prompt or model change is judged against a fixed labelled dataset, never b
 - **Cost and latency:** tokens and seconds per document, tracked over time.
 - **Report:** `npm run eval` prints a table per field so you can see which prompt change helped or hurt.
 
-Sample data: your own scans. Validation passing is not accuracy — a real table extraction passed every check with several cells wrong (`docs/learning-log.md` §8), which is why this milestone comes next.
+Sample data: your own scans. Validation passing is not accuracy — a real table extraction passed every check with several cells wrong (`docs/course.md` 3.1), which is why this milestone comes next.
 
 ## Working with Claude Code
 
 Since this is a study project, use Claude Code as a tutor and pair programmer, not as an autopilot.
 
-- **This file is the context.** Keep it lean — one terse line per decision; the reasoning belongs in `docs/learning-log.md`.
+- **This file is the context.** Keep it lean — one terse line per decision; the reasoning belongs in `docs/course.md`; `docs/learning-log.md` is the short journal.
 - **One milestone per session.** Ask for a plan first, review it, then let it implement.
-- **Ask "why".** After each step, ask Claude Code to explain the AI concept behind the code and add notes to `learning-log.md`.
+- **Ask "why".** After each step, ask Claude Code to explain the AI concept behind the code; add it as a lesson (Key idea / Why / In the code / Evidence / Check yourself) to `course.md` and a journal line to `learning-log.md`.
 - **Write some parts yourself.** Especially prompts and schemas; let Claude Code review them.
 - **Keep the eval green.** Ask it to run `npm run eval` after every prompt change and compare results.
 
 Suggested kickoff prompt:
 
 ```
-Read CLAUDE.md for the goals, stack, and roadmap, and docs/learning-log.md
+Read CLAUDE.md for the goals, stack, and roadmap, and docs/course.md
 for what the project has already learned. Let's do milestone 3: the eval
 harness — ground truth per document type, field-level accuracy, null
 correctness, cost and latency. Plan first, then implement. Explain each

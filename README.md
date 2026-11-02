@@ -6,8 +6,9 @@ capabilities.
 
 This is a **study project**: every stage is built to teach one AI concept, not
 just to work. See [`CLAUDE.md`](CLAUDE.md) for the full design and the
-nine-milestone roadmap, and [`docs/learning-log.md`](docs/learning-log.md) for
-what each milestone actually taught.
+nine-milestone roadmap, [`docs/course.md`](docs/course.md) for what the project
+has taught so far (lessons with quiz questions), and
+[`docs/learning-log.md`](docs/learning-log.md) for the milestone journal.
 
 ## Status
 
@@ -19,7 +20,7 @@ plus the metadata printed on the page). Tokens and cost print on every run.
 
 **Next: milestone 3, the eval harness.** A real table extraction passed every
 check with several cells wrong, so field-level accuracy against hand-written
-ground truth comes before any prompt tuning. See `docs/learning-log.md` §8.
+ground truth comes before any prompt tuning. See `docs/course.md` lesson 3.1.
 
 ## Setup
 
@@ -67,4 +68,4 @@ about what exists. `preprocess/`, `classify/`, `validate/`, and `output/` are
 coming — see `CLAUDE.md`.
 
 Adding a document type is two steps: write the schema in `src/schemas/`, add a
-line to `src/schemas/registry.ts`. The recipe is in `docs/learning-log.md` §11.
+line to `src/schemas/registry.ts`. The recipe is in `docs/course.md` lesson 2.7.
